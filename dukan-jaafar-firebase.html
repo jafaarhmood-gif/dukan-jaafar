@@ -433,6 +433,33 @@ document.querySelectorAll('.wa-choice').forEach(btn=>{
 document.getElementById('waOverlay').addEventListener('click', (e)=>{
   if(e.target.id==='waOverlay') document.getElementById('waOverlay').classList.remove('show');
 });
+</script><script>
+  // دالة لجلب المنتجات من Firebase Firestore وعرضها تلقائياً
+  async function loadProductsFromFirebase() {
+    try {
+      // التأكد من تهيئة قاعدة البيانات والاتصال بمجموعة products
+      const db = firebase.firestore();
+      const snapshot = await db.collection("products").get();
+      
+      if (snapshot.empty) {
+        console.log("لا توجد منتجات حالياً في قاعدة البيانات.");
+        return;
+      }
+
+      // يمكنك هنا إضافة الكود الذي يعرض المنتجات ديناميكياً داخل المتجر
+      snapshot.forEach(doc => {
+        const product = doc.data();
+        console.log("المنتج:", product.name, product.price);
+      });
+      
+    } catch (error) {
+      console.error("خطأ في جلب المنتجات:", error);
+    }
+  }
+
+  // تشغيل الدالة فور تحميل الصفحة
+  window.addEventListener('DOMContentLoaded', loadProductsFromFirebase);
 </script>
+
 </body>
 </html>
