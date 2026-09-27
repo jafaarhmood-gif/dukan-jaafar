@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>لوحة تحكم دُكَّان جهفر</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/12.3.0/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/12.3.0/firebase-firestore-compat.min.js"></script>
+<style>
+:root{
+  --dark:#211F45; --lav1:#CFCBEC; --lav2:#E7E4F7; --muted:#7A76A0; --danger:#c94747; --ok:#2E8C82;
+  box-sizing:border-box;
+}
+*{box-sizing:border-box;}
+body{margin:0; font-family:"Cairo",sans-serif; background:var(--lav2); color:var(--dark); padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);}
+header{background:var(--dark); color:#fff; padding:16px 18px; position:sticky; top:0; z-index:5; display:flex; align-items:center; justify-content:space-between;}
+header h1{font-size:16px; margin:0;}
+.tabs{display:flex; gap:8px; padding:12px 14px 0; overflow-x:auto;}
+.tabs button{flex:none; background:#fff; border:none; padding:8px 16px; border-radius:16px; font-family:"Cairo"; font-size:13px; font-weight:700; color:var(--dark); cursor:pointer;}
+.tabs button.active{background:var(--dark); color:#fff;}
+main{padding:14px;}
+.card{background:#fff; border-radius:16px; padding:14px; margin-bottom:10px; box-shadow:0 6px 16px -10px rgba(33,31,69,.25);}
+.card h3{margin:0 0 4px; font-size:14px;}
+.card .sub{font-size:12px; color:var(--muted); margin-bottom:8px;}
+.row{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:6px;}
+.stock-controls{display:flex; align-items:center; gap:8px;}
+.stock-controls button{width:30px; height:30px; border-radius:8px; border:none; background:var(--lav2); font-size:16px; cursor:pointer;}
+.stock-controls input{width:54px; text-align:center; border:1px solid var(--lav1); border-radius:8px; padding:5px; font-family:"Cairo"; font-size:13px;}
+.stock-controls .save{background:var(--ok); color:#fff; font-size:12px; padding:6px 12px; border-radius:10px;}
+.badge{font-size:11px; padding:3px 9px; border-radius:10px; font-weight:700;}
+.badge.out{background:#fde3e3; color:var(--danger);}
+.badge.ok{background:#e2f3f1; color:var(--ok);}
+.badge.vip{background:#fff3d6; color:#a8790a;}
+.order-items{font-size:12px; color:var(--muted); margin-top:4px;}
+#pinScreen{position:fixed; inset:0; background:var(--dark); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:14px; z-index:50; padding:20px;}
+#pinScreen input{padding:12px 16px; border-radius:12px; border:none; font-size:18px; text-align:center; letter-spacing:4px; width:160px; font-family:"Cairo";}
+#pinScreen button{padding:11px 26px; border-radius:12px; border:none; background:#fff; color:var(--dark); font-weight:700; font-family:"Cairo"; cursor:pointer;}
+#pinScreen p{color:#fff; font-size:13px; opacity:.8;}
+#pinError{color:#ff9d9d; font-size:12px; min-height:16px;}
+.empty{text-align:center; color:var(--muted); font-size:13px; padding:30px 0;}
+.loading{text-align:center; color:var(--muted); font-size:13px; padding:20px 0;}
+</style>
+</head>
+<body>
+
+<div id="pinScreen">
+  <p>أدخل رمز الدخول للوحة التحكم</p>
+  <input type="password" inputmode="numeric" id="pinInput" placeholder="••••" maxlength="6">
+  <button id="pinSubmit">دخول</button>
+  <div id="pinError"></div>
+</div>
+
+<header>
+  <h1>لوحة تحكم دُكَّان جهفر</h1>
+  <span id="lastUpdate" style="font-size:11px; opacity:.75;"></span>
+</header>
+<div class="tabs">
+  <button data-tab="stock" class="active">المخزون</button>
+  <button data-tab="orders">الطلبات</button>
+  <button data-tab="customers">الزبائن</button>
+</div>
+<main id="main"><div class="loading">جاري التحميل...</div></main>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAcLn9b8i6e40pIS6gE8Ex5xXv78hBlPvA",
+  authDomain: "dukan-jaafar.firebaseapp.com",
+  projectId: "dukan-jaafar",
+  storageBucket: "dukan-jaafar.firebasestorage.app",
+  messagingSenderId: "179580937604",
+  appId: "1:179580937604:web:81325223522d42e2b6e9d1",
+  measurementId: "G-EJLJR930EP"
+};
+
+const ADMIN_PIN = "1234"; // غيّر هذا الرقم لرمز تختاره انت
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const products = [
+  {id:"1", name:"عود ملكي"}, {id:"2", name:"ياسمين الليل"}, {id:"3", name:"مسك أبيض"},
+  {id:"4", name:"بلو أوشن"}, {id:"5", name:"عنبر ذهبي"}, {id:"6", name:"فانيليا كريمية"},
+  {id:"7", name:"وود أسود"}, {id:"8", name:"زهر البرتقال"}, {id:"9", name:"عنبر ملكي"},
+];
+
+let activeTab = "stock";
+
+document.getElementById('pinSubmit').addEventListener('click', checkPin);
+document.getElementById('pinInput').addEventListener('keydown', e=>{ if(e.key==='Enter') checkPin(); });
+function checkPin(){
+  const val = document.getElementById('pinInput').value.trim();
+  if(val === ADMIN_PIN){
+    document.getElementById('pinScreen').style.display = 'none';
+    sessionStorage.setItem('adminAuthed','1');
+    loadAll();
+  } else {
+    document.getElementById('pinError').textContent = 'رمز غير صحيح';
+  }
+}
+if(sessionStorage.getItem('adminAuthed')==='1'){
+  document.getElementById('pinScreen').style.display = 'none';
+  loadAll();
+}
+
+document.querySelectorAll('.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    activeTab = btn.dataset.tab;
+    render();
+  });
+});
+
+let stockData = {};
+let ordersData = [];
+let customersData = [];
+
+async function loadAll(){
+  document.getElementById('main').innerHTML = '<div class="loading">جاري التحميل...</div>';
+  try{
+    const prodSnap = await db.collection('products').get();
+    prodSnap.docs.forEach(d=>{ stockData[d.id] = d.data(); });
+
+    const ordersSnap = await db.collectionGroup('orders').get();
+    ordersData = ordersSnap.docs.map(d=>({...d.data(), _path:d.ref.path}))
+      .sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))
+      .slice(0,100);
+
+    const profilesSnap = await db.collection('customers').get();
+    customersData = profilesSnap.docs.map(d=>d.data()).filter(p=>p && p.name);
+
+    document.getElementById('lastUpdate').textContent = 'آخر تحديث: ' + new Date().toLocaleTimeString('ar');
+  }catch(e){
+    document.getElementById('main').innerHTML = '<div class="empty">صار خطأ بتحميل البيانات، تأكد من الاتصال بالإنترنت وحاول من جديد.</div>';
+    console.error(e);
+    return;
+  }
+  render();
+}
+
+function render(){
+  if(activeTab==='stock') renderStock();
+  else if(activeTab==='orders') renderOrders();
+  else renderCustomers();
+}
+
+function renderStock(){
+  const main = document.getElementById('main');
+  main.innerHTML = products.map(p=>{
+    const stock = stockData[p.id] ? (stockData[p.id].stock ?? 0) : 0;
+    const out = stock<=0;
+    return `
+    <div class="card">
+      <div class="row">
+        <div>
+          <h3>${p.name}</h3>
+          <span class="badge ${out?'out':'ok'}">${out?'نفذت الكمية':'متوفر'}</span>
+        </div>
+        <div class="stock-controls">
+          <button data-dec="${p.id}">−</button>
+          <input type="number" id="stock-${p.id}" value="${stock}">
+          <button data-inc="${p.id}">+</button>
+          <button class="save" data-save="${p.id}">حفظ</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  main.querySelectorAll('[data-inc]').forEach(b=>b.addEventListener('click', ()=>{
+    const inp = document.getElementById('stock-'+b.dataset.inc); inp.value = Number(inp.value)+1;
+  }));
+  main.querySelectorAll('[data-dec]').forEach(b=>b.addEventListener('click', ()=>{
+    const inp = document.getElementById('stock-'+b.dataset.dec); inp.value = Math.max(0, Number(inp.value)-1);
+  }));
+  main.querySelectorAll('[data-save]').forEach(b=>b.addEventListener('click', async ()=>{
+    const id = b.dataset.save;
+    const val = Math.max(0, Number(document.getElementById('stock-'+id).value)||0);
+    b.textContent = '...';
+    try{
+      await db.collection('products').doc(id).set({stock:val}, {merge:true});
+      stockData[id] = {...(stockData[id]||{}), stock:val};
+      b.textContent = 'تم ✓';
+      setTimeout(()=>{ b.textContent='حفظ'; renderStock(); }, 700);
+    }catch(e){ b.textContent = 'خطأ!'; }
+  }));
+}
+
+function renderOrders(){
+  const main = document.getElementById('main');
+  if(ordersData.length===0){ main.innerHTML = '<div class="empty">ماكو طلبات لحد الآن</div>'; return; }
+  main.innerHTML = ordersData.map(o=>{
+    const date = o.createdAt ? new Date(o.createdAt).toLocaleString('ar') : '';
+    const itemsList = o.items ? Object.entries(o.items).map(([id,q])=>{
+      const p = products.find(pr=>pr.id===id);
+      return `${p?p.name:id} × ${q}`;
+    }).join('، ') : '';
+    return `
+    <div class="card">
+      <div class="row"><h3>${o.name||'زبون'} · $${o.total||0}</h3><span class="sub">${date}</span></div>
+      <div class="order-items">${itemsList}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderCustomers(){
+  const main = document.getElementById('main');
+  if(customersData.length===0){ main.innerHTML = '<div class="empty">ماكو زبائن مسجلين لحد الآن</div>'; return; }
+  const sorted = [...customersData].sort((a,b)=>(b.totalSpent||0)-(a.totalSpent||0));
+  main.innerHTML = sorted.map(c=>{
+    const vip = (c.totalSpent||0) >= 150;
+    return `
+    <div class="card">
+      <div class="row">
+        <h3>${c.name}</h3>
+        ${vip?'<span class="badge vip">VIP</span>':''}
+      </div>
+      <div class="sub">إجمالي المشتريات: $${c.totalSpent||0}</div>
+    </div>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
