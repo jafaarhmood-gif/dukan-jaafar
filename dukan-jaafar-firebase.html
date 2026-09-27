@@ -433,68 +433,6 @@ document.querySelectorAll('.wa-choice').forEach(btn=>{
 document.getElementById('waOverlay').addEventListener('click', (e)=>{
   if(e.target.id==='waOverlay') document.getElementById('waOverlay').classList.remove('show');
 });
-</script><!-- قسم عرض العطور الفاخرة -->
-<section id="perfumes-section" style="padding: 20px; max-width: 1200px; margin: 0 auto;">
-  <h2 style="color: #c97a2e; text-align: center; font-family: sans-serif; margin-bottom: 30px; font-size: 24px;">
-    ✨ تشكيلة العطور الفاخرة
-  </h2>
-
-  <!-- شبكة عرض المنتجات -->
-  <div id="products-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
-    
-    <!-- عطر 1 -->
-    <div class="product-card" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(201,122,46,0.3); border-radius: 15px; padding: 15px; text-align: center; backdrop-filter: blur(10px);">
-      <div style="width: 100%; height: 200px; background: #111; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 50px; margin-bottom: 15px;">
-        👑
-      </div>
-      <h3 style="color: #fff; margin: 10px 0 5px; font-size: 18px;">عود الملكي</h3>
-      <p style="color: #aaa; font-size: 13px; margin-bottom: 15px;">نفحات العود الفاخر مع لمسة من العنبر والمسك</p>
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-        <span style="color: #f6b26b; font-weight: bold; font-size: 16px;">120 $</span>
-        <button onclick="addToCart('عود الملكي', 120)" style="background: linear-gradient(135deg, #f6b26b, #c97a2e); color: #000; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">
-          + إضافة للسلة
-        </button>
-      </div>
-    </div>
-
-    <!-- عطر 2 -->
-    <div class="product-card" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(201,122,46,0.3); border-radius: 15px; padding: 15px; text-align: center; backdrop-filter: blur(10px);">
-      <div style="width: 100%; height: 200px; background: #111; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 50px; margin-bottom: 15px;">
-        🌙
-      </div>
-      <h3 style="color: #fff; margin: 10px 0 5px; font-size: 18px;">سحر الليالي</h3>
-      <p style="color: #aaa; font-size: 13px; margin-bottom: 15px;">مزيج ساحر من الورد الجوري والزعفران النادر</p>
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-        <span style="color: #f6b26b; font-weight: bold; font-size: 16px;">95 $</span>
-        <button onclick="addToCart('سحر الليالي', 95)" style="background: linear-gradient(135deg, #f6b26b, #c97a2e); color: #000; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">
-          + إضافة للسلة
-        </button>
-      </div>
-    </div>
-
-    <!-- عطر 3 -->
-    <div class="product-card" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(201,122,46,0.3); border-radius: 15px; padding: 15px; text-align: center; backdrop-filter: blur(10px);">
-      <div style="width: 100%; height: 200px; background: #111; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 50px; margin-bottom: 15px;">
-        ✨
-      </div>
-      <h3 style="color: #fff; margin: 10px 0 5px; font-size: 18px;">إكسير الفخامة</h3>
-      <p style="color: #aaa; font-size: 13px; margin-bottom: 15px;">عبير الفانيليا السوداء مع خشب الصندل الدافئ</p>
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-        <span style="color: #f6b26b; font-weight: bold; font-size: 16px;">150 $</span>
-        <button onclick="addToCart('إكسير الفخامة', 150)" style="background: linear-gradient(135deg, #f6b26b, #c97a2e); color: #000; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">
-          + إضافة للسلة
-        </button>
-      </div>
-    </div>
-
-  </div>
-</section>
-
-<script>
-  function addToCart(name, price) {
-    alert('تمت إضافة ' + name + ' بسعر ' + price + '$ إلى السلة بنجاح! 🛒');
-  }
 </script>
-
 </body>
 </html>
