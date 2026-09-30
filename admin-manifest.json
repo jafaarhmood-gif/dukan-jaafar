@@ -1,0 +1,16 @@
+{
+  "name": "لوحة تحكم دُكَّان جهفر",
+  "short_name": "لوحة التحكم",
+  "description": "لوحة تحكم متجر عطور دُكَّان جهفر",
+  "start_url": "./admin.html",
+  "scope": "./admin.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1a1a1a",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
