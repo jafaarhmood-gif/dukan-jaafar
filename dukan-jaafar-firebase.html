@@ -2224,7 +2224,7 @@ document.querySelectorAll('.share-opt').forEach(btn=>{
 });
 function genCouponCode(prefix){ return prefix + '-' + Math.random().toString(36).slice(2,8).toUpperCase(); }
 async function awardPoints(amount){
-  const pts = Math.max(0, Math.floor(amount));
+const pts = Math.max(0, Math.floor(amount / 1000));
   const p = JSON.parse(localStorage.getItem('profile')||'{}');
   p.points = (p.points||0) + pts;
   localStorage.setItem('profile', JSON.stringify(p));
