@@ -347,7 +347,7 @@ function render(){
   else if(activeTab==='banners') renderBanners();
   else if(activeTab==='reels') renderReels();
   else if(activeTab==='galphotos') renderGalPhotos();
-  else if(activeTab==='reports') renderReports();
+  else if(activeTab==='reports'){ renderReports(); appendResetCard(); }
   else if(activeTab==='supply') renderSupply();
   else renderAddProduct();
 }
@@ -763,6 +763,46 @@ function renderReels(){
 }
 
 
+
+function appendResetCard(){
+  const main = document.getElementById('main');
+  const d = document.createElement('div');
+  d.className = 'card';
+  d.style.border = '1px solid #c0392b';
+  d.innerHTML = `<h3 style="color:#c0392b;">تصفير التطبيق (بداية جديدة)</h3>
+    <div class="sub">يحذف كل الطلبات ومبيعات الشركاء، ويصفّر نقاط الولاء وإجمالي مشتريات كل الزبائن، ويرجّع ترقيم الطلبات من #1. المنتجات والزبائن والشركاء (بدون عمولاتهم المدفوعة) تبقى. لا يمكن التراجع.</div>
+    <button id="resetAllBtn" class="addBtn" style="background:#c0392b;">تصفير الطلبات والنقاط</button>
+    <div id="resetMsg" style="font-size:13px; text-align:center; margin-top:8px; min-height:18px;"></div>`;
+  main.appendChild(d);
+  document.getElementById('resetAllBtn').addEventListener('click', async ()=>{
+    const msg = document.getElementById('resetMsg');
+    if(prompt('هذا يحذف كل الطلبات ويصفّر النقاط نهائياً. اكتب كلمة: تصفير') !== 'تصفير') return;
+    try{
+      msg.textContent = 'جاري حذف الطلبات...';
+      let n = 0;
+      for(const o of ordersData){ if(o._path){ await db.doc(o._path).delete(); n++; } }
+      msg.textContent = 'جاري تصفير مبيعات الشركاء...';
+      for(const p of partnersData){
+        try{
+          const sales = await restGetCollection(`partners/${p.id}/sales`);
+          for(const sd of sales){ await db.doc(`partners/${p.id}/sales/${sd.id}`).delete(); }
+          await db.doc(`partners/${p.id}`).set({paid:0, payments:[]}, {merge:true});
+        }catch(e){}
+      }
+      msg.textContent = 'جاري تصفير النقاط...';
+      for(const c of customersData){
+        if(!c.uid) continue;
+        try{ await db.doc(`data/users/${c.uid}/profile`).set({points:0, totalSpent:0}, {merge:true}); }catch(e){}
+        try{ await db.doc(`customers/${c.uid}`).set({points:0, totalSpent:0}, {merge:true}); }catch(e){}
+      }
+      try{ await db.doc('counters/orders').set({n:0}); }catch(e){ msg.textContent='تنبيه: ما انصفّر العدّاد — أضف قاعدة counters بفايرستور.'; }
+      ordersData = [];
+      await loadAll();
+      alert(`تم التصفير: حُذف ${n} طلب.`);
+    }catch(e){ msg.style.color='#c0392b'; msg.textContent='صار خطأ: '+(e.code||e.message); }
+  });
+}
+
 function renderBanners(){
   const main = document.getElementById('main');
   main.innerHTML = `
@@ -1089,7 +1129,7 @@ function renderOrders(){
     const status = o.status || 'قيد التجهيز';
     return `
     <div class="card">
-      <div class="row"><h3>${o.name||'زبون'} · ${fmtIQD(o.total||0)}</h3><span class="sub">${date}</span></div>
+      <div class="row"><h3>${o.orderNo?'#'+o.orderNo+' · ':''}${o.name||'زبون'} · ${fmtIQD(o.total||0)}</h3><span class="sub">${date}</span></div>
       <div class="order-items">${itemsList}</div>
       ${profit!=null ? `<div class="sub">الربح التقريبي: ${fmtIQD(profit - (o.partnerCommission||0))}</div>` : ''}
       ${o.partnerCode ? `<div class="sub">🤝 شريك ${o.partnerCode} · عمولته ${fmtIQD(o.partnerCommission||0)}</div>` : ''}

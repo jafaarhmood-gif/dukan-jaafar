@@ -2781,14 +2781,28 @@ document.getElementById('checkoutBtn').addEventListener('click', async ()=>{
     }catch(e){}
   }
   const partnerCommission = partner ? Math.round(total * partner.pct / 100) : 0;
+  // رقم تسلسلي للطلب (١، ٢، ٣...) من عدّاد مشترك بفايرستور
+  let orderNo = null;
+  if(db){
+    try{
+      orderNo = await withTimeout(db.runTransaction(async tx=>{
+        const ref = db.doc('counters/orders');
+        const sn = await tx.get(ref);
+        const n = ((sn.exists && sn.data().n) || 0) + 1;
+        tx.set(ref, {n});
+        return n;
+      }), 7000);
+    }catch(e){ orderNo = null; }
+  }
+  if(orderNo) msg = msg.replace('مرحبا، بدي أطلب:', `مرحبا، بدي أطلب (طلب رقم #${orderNo}):`);
   try{
     if(db && profileRef){
       const snapBefore = await profileRef.get();
       const customerName = (snapBefore.exists && snapBefore.data().name) || 'زبون';
       const orderExtra = partner ? {partnerCode:partner.code, partnerPct:partner.pct, partnerCommission} : {};
-      const orderRef = await profileRef.collection('orders').add({items:cart, itemsDetail, total, costTotal, couponCode: usedCoupon?usedCoupon.code:null, status:'قيد التجهيز', createdAt:Date.now(), uid, name:customerName, ...orderExtra});
+      const orderRef = await profileRef.collection('orders').add({items:cart, itemsDetail, total, costTotal, couponCode: usedCoupon?usedCoupon.code:null, status:'قيد التجهيز', createdAt:Date.now(), uid, name:customerName, orderNo, ...orderExtra});
       if(partner){
-        try{ await db.doc(`partners/${partner.code}/sales/${orderRef.id}`).set({orderId:orderRef.id, customerName, total, pct:partner.pct, commission:partnerCommission, status:'قيد التجهيز', createdAt:Date.now()}); }catch(e){}
+        try{ await db.doc(`partners/${partner.code}/sales/${orderRef.id}`).set({orderId:orderRef.id, orderNo, customerName, total, pct:partner.pct, commission:partnerCommission, status:'قيد التجهيز', createdAt:Date.now()}); }catch(e){}
       }
       const snap = await profileRef.get();
       const newTotal = (snap.data().totalSpent||0) + total;
